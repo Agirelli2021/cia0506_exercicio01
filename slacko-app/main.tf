@@ -4,12 +4,12 @@ data "aws_ami" "slacko-app" {
 
   filter {
      name = "name"
-     values = ["Amazon"]
+     values = ["Amazon*"]
   }
 
   filter {
-     name = "architeture"
-     value = ["x86_64"] 
+     name = "architecture"
+     values = ["x86_64"] 
   }
 }
 
@@ -48,8 +48,8 @@ resource "aws_instance" "slacko-app" {
 
 resource "aws_instance" "mongodb" {
   ami = data.aws_ami.slacko-app.id
-  insatance_type = "t2.small"
-  subnet_id = data.aqws_subnet.subnet_public.id
+  instance_type = "t2.small"
+  subnet_id = data.aws_subnet.subnet_public.id
    
   tags = {
      Name = "mongodb"
@@ -66,7 +66,7 @@ resource "aws_security_group" "allow-slacko" {
     name = "allow_ssh_http"
     description = "allow ssh and http port"
     # entrar na AWS e em VPC na segunda coluna tem a VPC ID, colar no campo abaixo
-    vpc_id = "vpc-055c4fdd7f1748783"
+    vpc_id = "vpc-0a44df716eb8e71be"
 
     ingress = [
         {
@@ -75,13 +75,21 @@ resource "aws_security_group" "allow-slacko" {
         to_port = 22
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
-    },   
-    {
+        ipv6_cidr_blocks = ["::/0"]
+        self      = true
+        prefix_list_ids = null 
+        security_groups = null
+    }, 
+        {
         description = "allow SSH"
         from_port = 80
         to_port = 80
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        self      = true
+        prefix_list_ids = null 
+        security_groups = null
     }
     ]
 
@@ -92,6 +100,10 @@ resource "aws_security_group" "allow-slacko" {
         to_port = 0
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        self      = true
+        prefix_list_ids = null 
+        security_groups = null
         }
     ]
 
@@ -104,7 +116,7 @@ resource "aws_security_group" "allow-mongodb" {
     name = "allow_mongodb"
     description = "allow Mongodb"
     # entrar na AWS e em VPC na segunda coluna tem a VPC ID, colar no campo abaixo
-    vpc_id = "vpc-055c4fdd7f1748783"
+    vpc_id = "vpc-0a44df716eb8e71be"
 
     ingress = [
         {
@@ -113,8 +125,14 @@ resource "aws_security_group" "allow-mongodb" {
         to_port = 27017
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        self      = true
+        prefix_list_ids = null 
+        security_groups = null
         }
     ]
+
+
 
     egress = [
         {
@@ -123,6 +141,10 @@ resource "aws_security_group" "allow-mongodb" {
         to_port = 0
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        self      = true
+        prefix_list_ids = null 
+        security_groups = null
         }
     ]
     
@@ -137,16 +159,17 @@ resource "aws_network_interface_sg_attachment" "mongodb-sg" {
 }
 
 resource "aws_network_interface_sg_attachment" "slacko-sg" {
-    security_group_id = aws_security_group.allow-mongodb.id
+    security_group_id = aws_security_group.allow-slacko.id
     network_interface_id = aws_instance.slacko-app.primary_network_interface_id
 }
+
 
 resource "aws_route53_zone" "slack_zone"{
     name = "iaac0506.com.br"
 
     vpc {
         # entrar na AWS e em VPC na segunda coluna tem a VPC ID, colar no campo abaixo
-        vpc_id = "vpc-055c4fdd7f1748783"
+        vpc_id = "vpc-0a44df716eb8e71be"
     }
 }
 
